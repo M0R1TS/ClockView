@@ -8,6 +8,8 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
+import java.util.Calendar
+import kotlin.properties.Delegates
 
 class ClockView @JvmOverloads constructor(context: Context, attributeSet: AttributeSet? = null) : View(context, attributeSet) {
 
@@ -35,6 +37,8 @@ class ClockView @JvmOverloads constructor(context: Context, attributeSet: Attrib
     init {
         initDrawingTools()
     }
+
+
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val widthMode = MeasureSpec.getMode(widthMeasureSpec)
@@ -66,9 +70,56 @@ class ClockView @JvmOverloads constructor(context: Context, attributeSet: Attrib
             drawableStaticPicture()
         }
         canvas.drawBitmap(bitmap, centerX - radius, centerY - radius, null)
-//        drawHands(canvas)
-//
-//        postInvalidateDelayed(500)
+        drawHands(canvas)
+
+        postInvalidateDelayed(500)
+    }
+
+    private fun drawHands (canvas: Canvas){
+        canvas.translate(centerX, centerY)
+
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR)
+
+        drawHand(
+            canvas,
+            ((hour + calendar.get(Calendar.MINUTE) / 60.0) * 5f),
+            HOUR_HAND
+        )
+
+        drawHand(canvas, calendar.get(Calendar.MINUTE).toDouble(), MINUTE_HAND)
+        drawHand(canvas, calendar.get(Calendar.SECOND).toDouble(), SECOND_HAND)
+    }
+
+    private fun drawHand(canvas: Canvas, loc: Double, hand: Int){
+
+        val paintHands = Paint().apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            isAntiAlias = true
+
+            when(hand){
+                HOUR_HAND -> strokeWidth = scaleSize * 0.5f
+                MINUTE_HAND -> strokeWidth = scaleSize * 0.3f
+                SECOND_HAND -> {
+                    strokeWidth = scaleSize * 0.2f
+                    color =arrowColor
+                }
+            }
+        }
+
+        val angle = Math.PI * loc / 30 -  Math.PI / 2
+        val handRadius = if (hand == HOUR_HAND){
+            radius * 0.7
+        } else {
+            radius * 0.9
+        }
+        canvas.drawLine(
+            0f, 0f,
+            (Math.cos(angle) * handRadius).toFloat(),
+            (Math.sin(angle) * handRadius).toFloat(),
+            paintHands
+        )
     }
 
     private fun initDrawingTools() {
@@ -129,4 +180,9 @@ class ClockView @JvmOverloads constructor(context: Context, attributeSet: Attrib
             MeasureSpec.AT_MOST, MeasureSpec.EXACTLY -> size
             else -> 300
         }
+    companion object{
+        const val HOUR_HAND = 1
+        const val MINUTE_HAND =  2
+        const val SECOND_HAND =  3
+    }
 }
